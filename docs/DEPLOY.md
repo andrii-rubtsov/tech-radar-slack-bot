@@ -17,46 +17,35 @@ You should have these 5 secrets ready:
 | `CF_API_TOKEN` | `AbCdEf123456...` |
 | `ANTHROPIC_API_KEY` | `sk-ant-api03-...` |
 
-Plus one config value:
-
-| Config | How to get |
-|--------|-----------|
-| `SLACK_CHANNEL_ID` | In Slack: right-click `#tech-radar` → "View channel details" → scroll to bottom |
-
 ---
 
 ## 1. Clone the Repo
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/tech-radar-bot.git
-cd tech-radar-bot
+git clone https://github.com/YOUR_USERNAME/tech-radar-slack-bot.git
+cd tech-radar-slack-bot
 npm install
 ```
 
 ## 2. Configure wrangler.toml
 
-Edit `wrangler.toml` and set your channel ID:
+The default `wrangler.toml` is ready to use:
 
 ```toml
-[vars]
-SLACK_CHANNEL_ID = "C06YOUR_CHANNEL_ID"
-```
+name = "tech-radar-slack-bot"
+main = "src/index.ts"
+compatibility_date = "2026-02-28"
+compatibility_flags = ["nodejs_compat"]
 
-Optionally adjust:
-```toml
-# Cron schedule (default: weekdays at 07:00 UTC)
 [triggers]
 crons = ["0 7 * * 1-5"]
 
-# Model overrides
 [vars]
 CLAUDE_MODEL_SUMMARIZE = "claude-haiku-4-5-20251001"
-CLAUDE_MODEL_DIGEST = "claude-sonnet-4-6"
-
-# Canvas title overrides (if your canvases have different names)
-CANVAS_TITLE_PROMPT = "Prompt"
-CANVAS_TITLE_SOURCES = "Sources"
+CLAUDE_MODEL_DIGEST    = "claude-sonnet-4-6"
 ```
+
+Optionally adjust the cron schedule or model overrides. No channel ID or canvas title config is needed.
 
 ## 3. Set Secrets
 
@@ -77,8 +66,8 @@ wrangler deploy
 
 Note the output URL:
 ```
-Published tech-radar-bot (1.23 sec)
-  https://tech-radar-bot.YOUR_SUBDOMAIN.workers.dev
+Published tech-radar-slack-bot (1.23 sec)
+  https://tech-radar-slack-bot.YOUR_SUBDOMAIN.workers.dev
 ```
 
 ## 5. Update Slack App URLs
@@ -86,23 +75,25 @@ Published tech-radar-bot (1.23 sec)
 Go to https://api.slack.com/apps → your app:
 
 ### Event Subscriptions
-1. **Request URL**: `https://tech-radar-bot.YOUR_SUBDOMAIN.workers.dev/slack/events`
+1. **Request URL**: `https://tech-radar-slack-bot.YOUR_SUBDOMAIN.workers.dev/slack/events`
 2. Wait for green "Verified" checkmark
 3. Save Changes
 
 ### Slash Commands
-1. Edit `/news` command
-2. **Request URL**: `https://tech-radar-bot.YOUR_SUBDOMAIN.workers.dev/slack/commands`
-3. Save
+Update all three commands with the same request URL:
+- `/tech-radar-setup` → `https://tech-radar-slack-bot.YOUR_SUBDOMAIN.workers.dev/slack/commands`
+- `/tech-radar-summarize` → `https://tech-radar-slack-bot.YOUR_SUBDOMAIN.workers.dev/slack/commands`
+- `/tech-radar-digest` → `https://tech-radar-slack-bot.YOUR_SUBDOMAIN.workers.dev/slack/commands`
 
-## 6. Create Canvases in Slack
+## 6. Create TechRadar Canvas in Slack
 
-If you haven't already (see [SETUP_SLACK.md](./SETUP_SLACK.md#9-create-canvases)):
+If you haven't already (see [SETUP_SLACK.md](./SETUP_SLACK.md#9-create-techradar-canvas)):
 
-1. In `#tech-radar`, click **"+"** tab → Canvas → title: **"Prompt"**
-2. Paste system prompt from [CANVAS_EXAMPLES.md](./CANVAS_EXAMPLES.md)
-3. Create another canvas tab → title: **"Sources"**
-4. Paste source URLs list
+1. Invite the bot to your channel: `/invite @tech-radar`
+   - The bot will automatically post setup instructions
+2. Or run `/tech-radar-setup` for the minimal TOML template
+3. Create a canvas tab → title exactly: **`TechRadar`**
+4. Paste and customize the TOML config (see [CANVAS_EXAMPLES.md](./CANVAS_EXAMPLES.md))
 
 ## 7. Test
 
@@ -113,10 +104,23 @@ https://blog.cloudflare.com/vinext/
 ```
 The bot should reply within 10-15 seconds with a summary.
 
-### Test slash command:
+### Test setup command:
 ```
-/news https://github.blog/changelog/
+/tech-radar-setup
 ```
+Should return an ephemeral message with the minimal TOML template and setup instructions.
+
+### Test summarize command:
+```
+/tech-radar-summarize https://blog.cloudflare.com/vinext/
+```
+Should post a summary to the channel.
+
+### Test digest command:
+```
+/tech-radar-digest
+```
+Should trigger a digest for the current channel and post the result.
 
 ### Test cron (manually):
 ```bash
@@ -176,8 +180,8 @@ ANTHROPIC_API_KEY=sk-ant-your-key
 
 ## Updating
 
-### Update prompt or sources:
-Edit the canvas in Slack. No deploy needed — changes take effect immediately.
+### Update config or sources:
+Edit the `TechRadar` canvas in Slack. No deploy needed — changes take effect immediately.
 
 ### Update code:
 ```bash
@@ -201,7 +205,7 @@ wrangler tail
 ```
 Check for errors. Common issues:
 - Slack signing verification failing → check `SLACK_SIGNING_SECRET`
-- Canvas not found → check canvas title matches env var exactly
+- Canvas not found → check `TechRadar` canvas exists in the channel; run `/tech-radar-setup`
 - Browser Rendering error → check `CF_API_TOKEN` has correct permissions
 
 ### "dispatch exception" in logs

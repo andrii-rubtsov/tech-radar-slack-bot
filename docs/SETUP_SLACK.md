@@ -20,22 +20,30 @@
 ```yaml
 display_information:
   name: Tech Radar Bot
-  description: Auto-summarizes tech articles with team context
+  description: AI-powered tech news feed, configurable per channel via a single Slack Canvas
   background_color: "#1a1a2e"
   long_description: |
-    Posts AI-powered summaries of tech articles shared in the channel.
-    Runs a daily digest of top articles from configurable sources.
-    All configuration (prompt, sources) lives in Slack Canvas tabs.
+    Summarizes tech articles shared in the channel and delivers a daily digest of top articles.
+    Add the bot to any channel, create a TechRadar canvas with your team config, and it's live.
+    No code changes, no redeploys — all configuration lives in the canvas.
 
 features:
   bot_user:
     display_name: tech-radar
     always_online: true
   slash_commands:
-    - command: /news
+    - command: /tech-radar-setup
       url: https://PLACEHOLDER.workers.dev/slack/commands
-      description: Summarize a URL with team context
-      usage_hint: "https://example.com/article"
+      description: Print canvas setup instructions and config template
+      should_escape: false
+    - command: /tech-radar-summarize
+      url: https://PLACEHOLDER.workers.dev/slack/commands
+      description: Summarize a URL and post to channel
+      usage_hint: "[optional note] https://example.com/article"
+      should_escape: false
+    - command: /tech-radar-digest
+      url: https://PLACEHOLDER.workers.dev/slack/commands
+      description: Trigger today's digest immediately
       should_escape: false
 
 oauth_config:
@@ -48,12 +56,14 @@ oauth_config:
       - files:read
       - commands
       - links:read
+      - conversations:read
 
 settings:
   event_subscriptions:
     request_url: https://PLACEHOLDER.workers.dev/slack/events
     bot_events:
       - message.channels
+      - member_joined_channel
   org_deploy_enabled: false
   socket_mode_enabled: false
   token_rotation_enabled: false
@@ -84,6 +94,7 @@ Under **Bot Token Scopes**, add these scopes:
 | `files:read` | List canvases (they're file type) |
 | `commands` | Slash commands |
 | `links:read` | Detect URLs in messages |
+| `conversations:read` | List channels for multi-channel digest |
 
 ## 4. Enable Event Subscriptions
 
@@ -92,23 +103,39 @@ Go to **Event Subscriptions** in the left sidebar.
 1. Toggle **"Enable Events"** → On
 2. **Request URL**: enter your worker URL (set this after deploying):
    ```
-   https://tech-radar-bot.<your-subdomain>.workers.dev/slack/events
+   https://tech-radar-slack-bot.<your-subdomain>.workers.dev/slack/events
    ```
 3. Slack will send a challenge request — your worker must respond (see SPEC.md)
 4. Under **Subscribe to bot events**, add:
    - `message.channels`
+   - `member_joined_channel`
 5. Click **"Save Changes"**
 
-## 5. Create Slash Command (optional)
+## 5. Slash Commands
 
-Go to **Slash Commands** in the left sidebar.
+Go to **Slash Commands** in the left sidebar. Create three commands:
 
+### /tech-radar-setup
 1. Click **"Create New Command"**
-2. Command: `/news`
-3. Request URL: `https://tech-radar-bot.<your-subdomain>.workers.dev/slack/commands`
-4. Short description: "Summarize a URL with team context"
-5. Usage hint: `https://example.com/article`
+2. Command: `/tech-radar-setup`
+3. Request URL: `https://tech-radar-slack-bot.<your-subdomain>.workers.dev/slack/commands`
+4. Short description: "Print canvas setup instructions and config template"
+5. Click **"Save"**
+
+### /tech-radar-summarize
+1. Click **"Create New Command"**
+2. Command: `/tech-radar-summarize`
+3. Request URL: `https://tech-radar-slack-bot.<your-subdomain>.workers.dev/slack/commands`
+4. Short description: "Summarize a URL and post to channel"
+5. Usage hint: `[optional note] https://example.com/article`
 6. Click **"Save"**
+
+### /tech-radar-digest
+1. Click **"Create New Command"**
+2. Command: `/tech-radar-digest`
+3. Request URL: `https://tech-radar-slack-bot.<your-subdomain>.workers.dev/slack/commands`
+4. Short description: "Trigger today's digest immediately"
+5. Click **"Save"**
 
 ## 6. Install App to Workspace
 
@@ -130,20 +157,18 @@ Go to **Basic Information** in the left sidebar.
 In Slack:
 1. Go to `#tech-radar`
 2. Type `/invite @tech-radar` or click channel settings → Integrations → Add apps
-3. The bot must be in the channel to receive events
+3. When the bot joins, it will automatically post setup instructions to the channel
 
-## 9. Create Canvases
+## 9. Create TechRadar Canvas
 
 In the `#tech-radar` channel:
 
 1. Click the **"+" tab** at the top of the channel (next to "Messages", "Files")
 2. Select **"Canvas"**
-3. Title it exactly: **`Prompt`** (must match env var `CANVAS_TITLE_PROMPT`)
-4. Paste your system prompt (see CANVAS_EXAMPLES.md for templates)
-5. Repeat: create another canvas tab titled **`Sources`**
-6. Paste your source URLs list (see CANVAS_EXAMPLES.md)
+3. Title it exactly: **`TechRadar`** (must be exact, case-sensitive)
+4. Paste your TOML config (see [CANVAS_EXAMPLES.md](CANVAS_EXAMPLES.md) for full examples, or run `/tech-radar-setup` for the minimal template)
 
-> ℹ️ Canvas titles are case-sensitive. The bot looks for exact title match.
+> ℹ️ One canvas per channel. The bot looks for an exact title match: `TechRadar`.
 
 ## 10. Collect Your Credentials
 
@@ -153,7 +178,6 @@ After setup, you should have:
 |--------|--------------|---------|
 | `SLACK_BOT_TOKEN` | Install App page | `xoxb-123-456-abc` |
 | `SLACK_SIGNING_SECRET` | Basic Information → App Credentials | `a1b2c3d4e5f6...` |
-| `SLACK_CHANNEL_ID` | Right-click channel name → "View channel details" → scroll to bottom | `C06ABCDEF` |
 
 ---
 
@@ -172,6 +196,10 @@ Your worker isn't responding to the Slack challenge. Make sure the worker is dep
 Go to OAuth & Permissions and add the missing scope. Then reinstall the app (Install App → Reinstall to Workspace).
 
 ### Canvas not found
-1. Check canvas title matches exactly (case-sensitive)
-2. Make sure the canvas is a **channel tab** canvas, not a standalone canvas
-3. Verify `canvases:read` and `files:read` scopes are granted
+1. Run `/tech-radar-setup` for step-by-step instructions
+2. Check canvas title is exactly `TechRadar` (case-sensitive)
+3. Make sure the canvas is a **channel tab** canvas, not a standalone canvas
+4. Verify `canvases:read` and `files:read` scopes are granted
+
+### TOML parse error
+The bot will post the parse error to the channel with a line reference. Check the canvas content, fix the TOML syntax, and try again.

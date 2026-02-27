@@ -1,4 +1,4 @@
-# Tech Radar Bot
+# Tech Radar Slack Bot
 
 AI-powered Slack bot that auto-summarizes tech articles and delivers daily curated digests — personalized to your team's context.
 
@@ -6,19 +6,21 @@ AI-powered Slack bot that auto-summarizes tech articles and delivers daily curat
 
 - **Auto-summarize** — post a URL in the channel, get an AI summary with relevance analysis for your team
 - **Daily digest** — automated morning digest of top articles from configurable sources
-- **Canvas-driven config** — system prompt and source list live in Slack Canvas tabs, editable by anyone on the team, no deploys needed
-- **Slash command** — `/news <url>` for on-demand summaries
+- **Canvas-driven config** — all configuration lives in a single `TechRadar` Slack Canvas in TOML format, editable by anyone on the team, no deploys needed
+- **Multi-channel** — add the bot to any channel, each gets its own `TechRadar` canvas config
+- **Self-provisioning** — when invited to a channel, the bot posts setup instructions automatically
+- **Slash commands** — `/tech-radar-setup`, `/tech-radar-summarize`, `/tech-radar-digest`
 
 ## How It Works
 
 ```
 You post a link → CF Worker fetches content → Claude summarizes → Bot posts in channel
                          ↑                          ↑
-              CF Browser Rendering         Prompt from Slack Canvas
-              (URL → Markdown)             (your team's context)
+              CF Browser Rendering         TechRadar canvas (TOML)
+              (URL → Markdown)             (your team's context + config)
 ```
 
-All personalization (company context, priorities, output format, language) is defined in a Slack Canvas tab. Edit the canvas → bot behavior changes immediately.
+All personalization (company context, tech stack, relevance criteria, output format, digest sources) is defined in a single `TechRadar` Slack Canvas in TOML format. Edit the canvas → bot behavior changes immediately.
 
 ## Stack
 
@@ -33,7 +35,7 @@ All personalization (company context, priorities, output format, language) is de
 2. **[Setup Cloudflare](docs/SETUP_CLOUDFLARE.md)** — API token for Browser Rendering
 3. **[Setup Claude](docs/SETUP_CLAUDE.md)** — API key with credits
 4. **[Deploy](docs/DEPLOY.md)** — deploy worker, connect to Slack
-5. **[Configure Canvases](docs/CANVAS_EXAMPLES.md)** — set your team's context and sources
+5. **Configure TechRadar Canvas** — invite the bot to a channel; it will post setup instructions automatically, or run `/tech-radar-setup`
 
 ## Cost
 
@@ -48,7 +50,7 @@ All personalization (company context, priorities, output format, language) is de
 | [SETUP_SLACK.md](docs/SETUP_SLACK.md) | Slack app setup guide |
 | [SETUP_CLOUDFLARE.md](docs/SETUP_CLOUDFLARE.md) | Cloudflare setup guide |
 | [SETUP_CLAUDE.md](docs/SETUP_CLAUDE.md) | Anthropic API setup |
-| [CANVAS_EXAMPLES.md](docs/CANVAS_EXAMPLES.md) | Prompt and sources templates |
+| [CANVAS_EXAMPLES.md](docs/CANVAS_EXAMPLES.md) | TechRadar canvas TOML templates and field reference |
 | [DEPLOY.md](docs/DEPLOY.md) | Deployment instructions |
 
 ## License

@@ -23,7 +23,7 @@ Estimated usage:
 
 1. Go to https://console.anthropic.com/settings/keys
 2. Click **"Create Key"**
-3. Name: `tech-radar-bot`
+3. Name: `tech-radar-slack-bot`
 4. Copy the key immediately — shown only once
 
 Save this as `ANTHROPIC_API_KEY`.
