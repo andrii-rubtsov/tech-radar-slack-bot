@@ -24,7 +24,7 @@ You should have these 5 secrets ready:
 ```bash
 git clone https://github.com/YOUR_USERNAME/tech-radar-slack-bot.git
 cd tech-radar-slack-bot
-npm install
+bun install
 ```
 
 ## 2. Configure wrangler.toml
@@ -38,14 +38,26 @@ compatibility_date = "2026-02-28"
 compatibility_flags = ["nodejs_compat"]
 
 [triggers]
-crons = ["0 7 * * 1-5"]
+crons = ["0 * * * *"]
 
 [vars]
 CLAUDE_MODEL_SUMMARIZE = "claude-haiku-4-5-20251001"
-CLAUDE_MODEL_DIGEST    = "claude-sonnet-4-6"
+CLAUDE_MODEL_DIGEST    = "claude-haiku-4-5-20251001"
+INGEST_WINDOW_HOURS     = "24"
+INGEST_MAX_SOURCE_LINKS = "20"
+INGEST_MAX_NEW_ARTICLES = "25"
+ARTICLE_RETENTION_DAYS  = "7"
+
+[[durable_objects.bindings]]
+name = "CHANNEL_RADAR_DO"
+class_name = "ChannelRadarDO"
+
+[[migrations]]
+tag = "v1-channel-radar-do"
+new_sqlite_classes = ["ChannelRadarDO"]
 ```
 
-Optionally adjust the cron schedule or model overrides. No channel ID or canvas title config is needed.
+Optionally adjust the cron schedule, ingest limits, or model overrides. No channel ID or canvas title config is needed.
 
 ## 3. Set Secrets
 
@@ -64,6 +76,8 @@ wrangler secret put ANTHROPIC_API_KEY
 wrangler deploy
 ```
 
+If this is an existing deployment, `wrangler deploy` will apply the `v1-channel-radar-do` Durable Object migration from `wrangler.toml`.
+
 Note the output URL:
 ```
 Published tech-radar-slack-bot (1.23 sec)
@@ -80,10 +94,13 @@ Go to https://api.slack.com/apps → your app:
 3. Save Changes
 
 ### Slash Commands
-Update all three commands with the same request URL:
+Update all commands with the same request URL:
 - `/tech-radar-setup` → `https://tech-radar-slack-bot.YOUR_SUBDOMAIN.workers.dev/slack/commands`
 - `/tech-radar-summarize` → `https://tech-radar-slack-bot.YOUR_SUBDOMAIN.workers.dev/slack/commands`
 - `/tech-radar-digest` → `https://tech-radar-slack-bot.YOUR_SUBDOMAIN.workers.dev/slack/commands`
+- `/tech-radar-sync` → `https://tech-radar-slack-bot.YOUR_SUBDOMAIN.workers.dev/slack/commands`
+- `/tech-radar-debug` → `https://tech-radar-slack-bot.YOUR_SUBDOMAIN.workers.dev/slack/commands`
+- `/tech-radar-recent` → `https://tech-radar-slack-bot.YOUR_SUBDOMAIN.workers.dev/slack/commands`
 
 ## 6. Create TechRadar Canvas in Slack
 
@@ -120,7 +137,25 @@ Should post a summary to the channel.
 ```
 /tech-radar-digest
 ```
-Should trigger a digest for the current channel and post the result.
+Should trigger a digest for the current channel and post the result from scored storage. If this is the first run, execute `/tech-radar-sync` first.
+
+### Test manual sync:
+```
+/tech-radar-sync
+```
+Should discover source links, reserve deduplicated URLs, and enqueue async processing work.
+
+### Test recent preview:
+```
+/tech-radar-recent 5
+```
+Should show top 5 scored recent links for the current ingest window.
+
+### Test debug:
+```
+/tech-radar-debug
+```
+Should post JSON debug state (last sync stats, source state, counters).
 
 ### Test cron (manually):
 ```bash
@@ -128,7 +163,7 @@ Should trigger a digest for the current channel and post the result.
 wrangler dev
 
 # In another terminal, trigger the cron:
-curl "http://localhost:8787/__scheduled?cron=0+7+*+*+1-5"
+curl "http://localhost:8787/__scheduled?cron=0+*+*+*+*"
 ```
 
 ### Watch logs:
@@ -207,6 +242,7 @@ Check for errors. Common issues:
 - Slack signing verification failing → check `SLACK_SIGNING_SECRET`
 - Canvas not found → check `TechRadar` canvas exists in the channel; run `/tech-radar-setup`
 - Browser Rendering error → check `CF_API_TOKEN` has correct permissions
+- No digest items returned → run `/tech-radar-sync` and check `/tech-radar-debug`
 
 ### "dispatch exception" in logs
 Usually means an unhandled error in async processing. Check the full error in `wrangler tail --format=pretty`.

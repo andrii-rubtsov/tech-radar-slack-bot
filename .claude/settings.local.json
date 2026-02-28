@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs ls:*)"
+      "Bash(xargs ls:*)",
+      "Bash(bun install:*)",
+      "Bash(/bin/bash:*)",
+      "Bash(ls:*)",
+      "Bash(bun run:*)",
+      "Bash(just:*)",
+      "Bash(brew:*)",
+      "Bash(/opt/homebrew/bin/just:*)",
+      "Bash(/opt/homebrew/opt/just/bin/just:*)"
     ]
   }
 }

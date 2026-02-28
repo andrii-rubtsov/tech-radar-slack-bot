@@ -18,34 +18,48 @@
 4. Switch to YAML tab and paste:
 
 ```yaml
+_metadata:
+  major_version: 1
+  minor_version: 1
 display_information:
   name: Tech Radar Bot
   description: AI-powered tech news feed, configurable per channel via a single Slack Canvas
   background_color: "#1a1a2e"
   long_description: |
-    Summarizes tech articles shared in the channel and delivers a daily digest of top articles.
+    Summarizes tech articles shared in the channel and delivers digest results from continuously scored sources.
     Add the bot to any channel, create a TechRadar canvas with your team config, and it's live.
     No code changes, no redeploys — all configuration lives in the canvas.
-
 features:
   bot_user:
     display_name: tech-radar
     always_online: true
   slash_commands:
     - command: /tech-radar-setup
-      url: https://PLACEHOLDER.workers.dev/slack/commands
+      url: https://tech-radar-slack-bot.<your-subdomain>.workers.dev/slack/commands
       description: Print canvas setup instructions and config template
       should_escape: false
     - command: /tech-radar-summarize
-      url: https://PLACEHOLDER.workers.dev/slack/commands
+      url: https://tech-radar-slack-bot.<your-subdomain>.workers.dev/slack/commands
       description: Summarize a URL and post to channel
       usage_hint: "[optional note] https://example.com/article"
       should_escape: false
     - command: /tech-radar-digest
-      url: https://PLACEHOLDER.workers.dev/slack/commands
+      url: https://tech-radar-slack-bot.<your-subdomain>.workers.dev/slack/commands
       description: Trigger today's digest immediately
       should_escape: false
-
+    - command: /tech-radar-sync
+      url: https://tech-radar-slack-bot.<your-subdomain>.workers.dev/slack/commands
+      description: Run source sync and queue async processing
+      should_escape: false
+    - command: /tech-radar-debug
+      url: https://tech-radar-slack-bot.<your-subdomain>.workers.dev/slack/commands
+      description: Print pipeline debug state for this channel
+      should_escape: false
+    - command: /tech-radar-recent
+      url: https://tech-radar-slack-bot.<your-subdomain>.workers.dev/slack/commands
+      description: Show top recent scored articles
+      usage_hint: "[optional N: 1-10]"
+      should_escape: false
 oauth_config:
   scopes:
     bot:
@@ -57,10 +71,9 @@ oauth_config:
       - commands
       - links:read
       - conversations:read
-
 settings:
   event_subscriptions:
-    request_url: https://PLACEHOLDER.workers.dev/slack/events
+    request_url: https://tech-radar-slack-bot.<your-subdomain>.workers.dev/slack/events
     bot_events:
       - message.channels
       - member_joined_channel
@@ -71,7 +84,7 @@ settings:
 
 5. Click **"Create"**
 
-> ⚠️ The PLACEHOLDER URLs will fail verification — that's OK. You'll update them after deploying the worker.
+> Replace `<your-subdomain>` with your actual Workers subdomain after deploy.
 
 ### Option B: Manual Setup
 
@@ -113,7 +126,7 @@ Go to **Event Subscriptions** in the left sidebar.
 
 ## 5. Slash Commands
 
-Go to **Slash Commands** in the left sidebar. Create three commands:
+Go to **Slash Commands** in the left sidebar. Create six commands:
 
 ### /tech-radar-setup
 1. Click **"Create New Command"**
@@ -136,6 +149,28 @@ Go to **Slash Commands** in the left sidebar. Create three commands:
 3. Request URL: `https://tech-radar-slack-bot.<your-subdomain>.workers.dev/slack/commands`
 4. Short description: "Trigger today's digest immediately"
 5. Click **"Save"**
+
+### /tech-radar-sync
+1. Click **"Create New Command"**
+2. Command: `/tech-radar-sync`
+3. Request URL: `https://tech-radar-slack-bot.<your-subdomain>.workers.dev/slack/commands`
+4. Short description: "Run source sync and queue async processing"
+5. Click **"Save"**
+
+### /tech-radar-debug
+1. Click **"Create New Command"**
+2. Command: `/tech-radar-debug`
+3. Request URL: `https://tech-radar-slack-bot.<your-subdomain>.workers.dev/slack/commands`
+4. Short description: "Print pipeline debug state for this channel"
+5. Click **"Save"**
+
+### /tech-radar-recent
+1. Click **"Create New Command"**
+2. Command: `/tech-radar-recent`
+3. Request URL: `https://tech-radar-slack-bot.<your-subdomain>.workers.dev/slack/commands`
+4. Short description: "Show top recent scored articles"
+5. Usage hint: `[optional N: 1-10]`
+6. Click **"Save"**
 
 ## 6. Install App to Workspace
 

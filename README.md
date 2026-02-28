@@ -1,30 +1,35 @@
 # Tech Radar Slack Bot
 
-AI-powered Slack bot that auto-summarizes tech articles and delivers daily curated digests — personalized to your team's context.
+AI-powered Slack bot that auto-summarizes tech articles and delivers curated digests from pre-scored sources, personalized to your team's context.
 
 ## Features
 
 - **Auto-summarize** — post a URL in the channel, get an AI summary with relevance analysis for your team
-- **Daily digest** — automated morning digest of top articles from configurable sources
+- **Incremental ingest + scoring** — discover links from configured sources, deduplicate, fetch, and score continuously
+- **Fast digest** — return top-scored recent articles from storage instead of one-shot fetch + analyze
 - **Canvas-driven config** — all configuration lives in a single `TechRadar` Slack Canvas in TOML format, editable by anyone on the team, no deploys needed
 - **Multi-channel** — add the bot to any channel, each gets its own `TechRadar` canvas config
 - **Self-provisioning** — when invited to a channel, the bot posts setup instructions automatically
-- **Slash commands** — `/tech-radar-setup`, `/tech-radar-summarize`, `/tech-radar-digest`
+- **Slash commands** — `/tech-radar-setup`, `/tech-radar-summarize`, `/tech-radar-digest`, `/tech-radar-sync`, `/tech-radar-debug`, `/tech-radar-recent`
 
 ## How It Works
 
 ```
-You post a link → CF Worker fetches content → Claude summarizes → Bot posts in channel
-                         ↑                          ↑
-              CF Browser Rendering         TechRadar canvas (TOML)
-              (URL → Markdown)             (your team's context + config)
+Summary path:
+You post a link → Worker reads TechRadar canvas → fetch Markdown → Claude summarizes → post in channel
+
+Digest path:
+Hourly / /tech-radar-sync → read canvas sources → discover URLs → DO dedupe
+                         → fetch Markdown → Claude scores (JSON) → store scored records
+                         → /tech-radar-digest reads top-N recent scored records and posts digest
 ```
 
-All personalization (company context, tech stack, relevance criteria, output format, digest sources) is defined in a single `TechRadar` Slack Canvas in TOML format. Edit the canvas → bot behavior changes immediately.
+All personalization (company context, tech stack, relevance criteria, output format, digest sources) is defined in a single `TechRadar` Slack Canvas in TOML format. Canvas must contain valid TOML for summarize and digest flows.
 
 ## Stack
 
 - **Cloudflare Workers** — runtime
+- **Cloudflare Durable Objects (SQLite)** — per-channel ingest state, dedupe, and scored article store
 - **CF Browser Rendering** — URL → Markdown extraction
 - **Anthropic Claude API** — summarization and relevance analysis
 - **Slack API** — events, canvas, messaging

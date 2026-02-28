@@ -16,8 +16,8 @@
 
 Estimated usage:
 - Auto-summarize (Haiku): ~$0.004 per article
-- Daily digest (Sonnet): ~$0.12 per digest
-- 20 articles/day + daily digest = **~$4-5/month**
+- Daily digest scoring (Haiku): significantly lower than Sonnet
+- 20 articles/day + digest scoring = **lower than Sonnet-based setup**
 
 ## 3. Create API Key
 
@@ -51,13 +51,13 @@ The bot uses two models (configurable via env vars):
 | Use Case | Default Model | Why |
 |----------|--------------|-----|
 | Auto-summarize (single article) | `claude-haiku-4-5-20251001` | Fast, cheap, good enough for single article summary |
-| Daily digest (multi-article ranking) | `claude-sonnet-4-6` | Needs to compare and rank multiple articles |
+| Daily digest scoring | `claude-haiku-4-5-20251001` | Lower cost for testing and high-volume runs |
 
 You can override these in `wrangler.toml`:
 ```toml
 [vars]
 CLAUDE_MODEL_SUMMARIZE = "claude-haiku-4-5-20251001"
-CLAUDE_MODEL_DIGEST = "claude-sonnet-4-6"
+CLAUDE_MODEL_DIGEST = "claude-haiku-4-5-20251001"
 ```
 
 Or use the same model for both if you prefer consistency over cost optimization.
