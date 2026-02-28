@@ -1,0 +1,32 @@
+name = "tech-radar-slack-bot"
+main = "src/index.ts"
+compatibility_date = "2026-02-28"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true
+
+[triggers]
+crons = ["0 * * * *"]
+
+[vars]
+CLAUDE_MODEL_SUMMARIZE = "claude-haiku-4-5-20251001"
+CLAUDE_MODEL_DIGEST    = "claude-haiku-4-5-20251001"
+INGEST_WINDOW_HOURS    = "24"
+INGEST_MAX_SOURCE_LINKS = "20"
+INGEST_MAX_NEW_ARTICLES = "25"
+ARTICLE_RETENTION_DAYS  = "7"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "877e0eb37695407a9ee79599df65eac7"
+
+[[durable_objects.bindings]]
+name = "CHANNEL_RADAR_DO"
+class_name = "ChannelRadarDO"
+
+[[migrations]]
+tag = "v1-channel-radar-do"
+new_sqlite_classes = ["ChannelRadarDO"]
